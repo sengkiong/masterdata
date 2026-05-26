@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a1f2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Survey Toko</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --bg:#0f1117;--surface:#1a1f2e;--surface2:#242938;--border:#2e3448;
+    --accent:#4f8ef7;--accent2:#7c3aed;--success:#10b981;--warning:#f59e0b;
+    --danger:#ef4444;--text:#e8eaf0;--text2:#8b91a8;--text3:#5a6080;
+    --radius:12px;--radius-sm:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:80px}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between}
+  .header-title{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+  .header-sub{font-size:12px;color:var(--text2);margin-top:2px}
+  .sync-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;transition:all .2s}
+  .sync-badge:active{transform:scale(.95)}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--warning)}
+  .sync-dot.synced{background:var(--success)}
+  .sync-dot.syncing{background:var(--accent);animation:pulse 1s infinite}
+  .page{display:none;padding:20px}
+  .page.active{display:block}
+  .section-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:20px 0 10px}
+  .section-label:first-child{margin-top:0}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
+  .field label .req{color:var(--danger);margin-left:2px}
+  input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .2s;appearance:none;-webkit-appearance:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  input::placeholder,textarea::placeholder{color:var(--text3)}
+  input.error,select.error{border-color:var(--danger)}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b91a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+  select option{background:var(--surface2)}
+  textarea{resize:none;height:80px}
+  .field-hint{font-size:11px;color:var(--text3);margin-top:5px}
+  .field-error{font-size:11px;color:var(--danger);margin-top:5px;display:none}
+  .field-error.show{display:block}
+  .gps-field{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .gps-coords{font-size:12px;color:var(--text2);font-family:monospace;flex:1;word-break:break-all}
+  .gps-coords.got{color:var(--success)}
+  .btn-gps{background:var(--accent);color:white;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;flex-shrink:0}
+  .btn-gps:active{transform:scale(.95);opacity:.85}
+  .btn-gps:disabled{background:var(--text3);cursor:not-allowed}
+  .photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .photo-box{background:var(--surface2);border:1.5px dashed var(--border);border-radius:var(--radius-sm);aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;transition:border-color .2s}
+  .photo-box:active{opacity:.8}
+  .photo-box.has-photo{border-style:solid;border-color:var(--success)}
+  .photo-box img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+  .photo-box-label{font-size:11px;font-weight:600;color:var(--text2);margin-top:8px;text-align:center;position:relative;z-index:1}
+  .photo-box.has-photo .photo-box-label{background:rgba(0,0,0,.65);color:white;padding:4px 8px;border-radius:4px}
+  .photo-icon{font-size:28px}
+  input[type="file"]{display:none}
+  .dup-warning{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--warning);display:none;margin-top:8px}
+  .dup-warning.show{display:block}
+  .btn-submit{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;border:none;border-radius:var(--radius);padding:16px;font-size:15px;font-weight:700;cursor:pointer;margin-top:24px;font-family:inherit;transition:all .2s;letter-spacing:-0.2px}
+  .btn-submit:active{transform:scale(.98);opacity:.9}
+  .btn-submit:disabled{background:var(--text3);cursor:not-allowed;transform:none}
+  .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+  .stat-num{font-size:24px;font-weight:700;color:var(--accent)}
+  .stat-label{font-size:11px;color:var(--text2);margin-top:2px}
+  .store-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:border-color .2s}
+  .store-item:active{border-color:var(--accent)}
+  .store-thumb{width:48px;height:48px;border-radius:8px;background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+  .store-thumb img{width:100%;height:100%;object-fit:cover}
+  .store-info{flex:1;min-width:0}
+  .store-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .store-meta{font-size:12px;color:var(--text2);margin-top:3px}
+  .store-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;margin-top:6px;display:inline-block}
+  .badge-pending{background:rgba(245,158,11,.15);color:var(--warning)}
+  .badge-synced{background:rgba(16,185,129,.15);color:var(--success)}
+  .empty{text-align:center;padding:60px 20px;color:var(--text2)}
+  .empty-icon{font-size:48px;margin-bottom:12px}
+  .empty-title{font-size:16px;font-weight:600;color:var(--text)}
+  .empty-sub{font-size:13px;margin-top:6px}
+  .search-wrap{position:relative;margin-bottom:16px}
+  .search-wrap input{padding-left:38px}
+  .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 20px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;white-space:nowrap;z-index:999;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.success{border-color:var(--success);color:var(--success)}
+  .toast.error{border-color:var(--danger);color:var(--danger)}
+  .toast.warning{border-color:var(--warning);color:var(--warning)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;border-top:1px solid var(--border)}
+  .modal-title{font-size:17px;font-weight:700;margin-bottom:16px}
+  .modal-close{float:right;background:var(--surface2);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;font-family:inherit;line-height:30px}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100}
+  .nav-item{flex:1;padding:12px 0 8px;text-align:center;cursor:pointer;transition:color .2s;color:var(--text3)}
+  .nav-item.active{color:var(--accent)}
+  .nav-icon{font-size:22px}
+  .nav-label{font-size:10px;font-weight:600;margin-top:3px}
+  .setting-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+  .setting-label{font-size:13px;font-weight:600;margin-bottom:8px}
+  .setting-hint{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
+  .step-item{display:flex;gap:10px;margin-bottom:10px;font-size:13px;color:var(--text2);line-height:1.5}
+  .step-num{background:var(--accent);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .btn-secondary{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:12px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;font-family:inherit;transition:all .2s}
+  .btn-secondary:active{opacity:.8}
+  .btn-danger{border-color:var(--danger);color:var(--danger);background:rgba(239,68,68,.08)}
+  .id-customer-field input{font-size:18px;font-weight:700;letter-spacing:1px;text-align:center;color:var(--accent)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">📍 Survey Toko</div>
+    <div class="header-sub" id="sales-name-display">— Pilih sales di Pengaturan</div>
+  </div>
+  <div class="sync-badge" onclick="syncAll()">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">Sync</span>
+  </div>
+</div>
+
+<!-- PAGE FORM -->
+<div class="page active" id="page-form">
+
+  <!-- SECTION 1: IDENTIFIKASI -->
+  <div class="section-label">Identifikasi</div>
+  <div class="field">
+    <label>Cabang<span class="req">*</span></label>
+    <select id="f-cabang">
+      <option value="">— Pilih Cabang —</option>
+      <option>Medan</option>
+      <option>Padang</option>
+      <option>Pekanbaru</option>
+      <option>Palembang</option>
+      <option>Bengkulu</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Sales<span class="req">*</span></label>
+    <select id="f-sales" onchange="saveSalesPref()">
+      <option value="">— Pilih Sales —</option>
+    </select>
+  </div>
+  <div class="field id-customer-field">
+    <label>ID Customer<span class="req">*</span></label>
+    <input type="text" id="f-id-customer" placeholder="Contoh: 12345678901" maxlength="11" pattern="[0-9]*" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,''); checkDuplicateID()">
+    <div class="field-hint">Angka saja, maksimal 11 digit</div>
+    <div class="field-error" id="err-id-customer">ID Customer sudah terdaftar</div>
+  </div>
+
+  <!-- SECTION 2: DATA TOKO -->
+  <div class="section-label">Data Toko</div>
+  <div class="field">
+    <label>Nama Toko<span class="req">*</span></label>
+    <input type="text" id="f-nama-toko" placeholder="Toko Maju Jaya" oninput="checkDuplicateName()">
+    <div class="dup-warning" id="dup-warning">⚠️ Nama ini mirip dengan toko yang sudah ada. Pastikan bukan duplikat.</div>
+  </div>
+  <div class="field">
+    <label>Tipe Toko</label>
+    <select id="f-tipe">
+      <option value="">— Pilih Tipe —</option>
+      <option>Warung/Kios</option>
+      <option>Toko Kelontong</option>
+      <option>Minimarket</option>
+      <option>Supermarket</option>
+      <option>Grosir</option>
+      <option>Horeca (Hotel/Resto/Cafe)</option>
+      <option>Apotek</option>
+      <option>Lainnya</option>
+    </select>
+  </div>
+
+  <!-- SECTION 3: PEMILIK -->
+  <div class="section-label">Pemilik / PIC</div>
+  <div class="field">
+    <label>Nama Pemilik<span class="req">*</span></label>
+    <input type="text" id="f-nama-pemilik" placeholder="Budi Santoso">
+  </div>
+  <div class="field">
+    <label>No. HP</label>
+    <input type="tel" id="f-hp" placeholder="08xxxxxxxxxx">
+  </div>
+  <div class="field">
+    <label>NIK (dari KTP)</label>
+    <input type="text" id="f-nik" placeholder="3171xxxxxxxxxx" maxlength="16" pattern="[0-9]*" inputmode="numeric">
+  </div>
+
+  <!-- SECTION 4: GPS -->
+  <div class="section-label">GPS & Lokasi</div>
+  <div class="field">
+    <label>Koordinat GPS<span class="req">*</span></label>
+    <div class="gps-field">
+      <div class="gps-coords" id="gps-display">Belum diambil</div>
+      <button class="btn-gps" id="btn-gps" onclick="getGPS()">📡 Ambil GPS</button>
+    </div>
+    <div class="field-hint" id="geocode-status"></div>
+  </div>
+
+  <!-- SECTION 5: LOKASI (auto-filled) -->
+  <div class="field">
+    <label>Provinsi</label>
+    <input type="text" id="f-provinsi" placeholder="Otomatis dari GPS...">
+  </div>
+  <div class="field">
+    <label>Kota / Kabupaten</label>
+    <input type="text" id="f-kota" placeholder="Otomatis dari GPS...">
+  </div>
+  <div class="field">
+    <label>Kecamatan<span class="req">*</span></label>
+    <input type="text" id="f-kecamatan" placeholder="Otomatis dari GPS...">
+  </div>
+  <div class="field">
+    <label>Kelurahan<span class="req">*</span></label>
+    <input type="text" id="f-kelurahan" placeholder="Otomatis dari GPS...">
+  </div>
+  <div class="field">
+    <label>Alamat Lengkap</label>
+    <textarea id="f-alamat" placeholder="Jl. Gatot Subroto No. 12, RT 03/RW 05"></textarea>
+  </div>
+
+  <!-- SECTION 5: FOTO -->
+  <div class="section-label">Foto</div>
+  <div class="photo-grid">
+    <div>
+      <div class="photo-box" id="box-ktp" onclick="triggerPhoto('ktp')">
+        <div class="photo-icon">🪪</div>
+        <div class="photo-box-label">Foto KTP<br><span style="font-size:10px;opacity:.7">Tap untuk ambil</span></div>
+      </div>
+      <input type="file" id="input-ktp" accept="image/*" capture="environment" onchange="previewPhoto(event,'ktp')">
+    </div>
+    <div>
+      <div class="photo-box" id="box-toko" onclick="triggerPhoto('toko')">
+        <div class="photo-icon">🏪</div>
+        <div class="photo-box-label">Foto Toko<br><span style="font-size:10px;opacity:.7">Tap untuk ambil</span></div>
+      </div>
+      <input type="file" id="input-toko" accept="image/*" capture="environment" onchange="previewPhoto(event,'toko')">
+    </div>
+  </div>
+
+  <!-- SECTION 6: CATATAN -->
+  <div class="section-label">Catatan</div>
+  <div class="field">
+    <textarea id="f-catatan" placeholder="Catatan tambahan (opsional)..."></textarea>
+  </div>
+
+  <button class="btn-submit" id="btn-simpan" onclick="submitForm()">💾 Simpan Data Toko</button>
+</div>
+
+<!-- PAGE LIST -->
+<div class="page" id="page-list">
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-pending" style="color:var(--warning)">0</div><div class="stat-label">Pending</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-synced" style="color:var(--success)">0</div><div class="stat-label">Synced</div></div>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Cari nama toko, ID, kecamatan..." oninput="filterList(this.value)">
+  </div>
+  <div id="store-list"></div>
+</div>
+
+<!-- PAGE SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="section-label">Google Sheets Setup</div>
+  <div class="setting-item">
+    <div class="setting-label">URL Google Apps Script</div>
+    <input type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/..." style="font-size:12px">
+    <button class="btn-secondary" onclick="saveAndTestURL()">💾 Simpan & Test Koneksi</button>
+    <div class="setting-hint" id="url-status"></div>
+  </div>
+
+  <div class="section-label">Daftar Sales</div>
+  <div class="setting-item">
+    <div class="setting-label">Data Salesman per Cabang</div>
+    <div class="setting-hint">
+      Data salesman sudah tertanam di aplikasi sesuai file SDN 2026.<br>
+      Untuk update, hubungi developer.<br><br>
+      <b style="color:var(--text)">Ringkasan:</b><br>
+      • Medan: 16 + 2 slot baru<br>
+      • Padang: 9 + 2 slot baru<br>
+      • Pekanbaru: 11 + 2 slot baru<br>
+      • Palembang: 11 + 2 slot baru<br>
+      • Bengkulu: 1 + 2 slot baru
+    </div>
+  </div>
+
+  <div class="section-label">Export & Backup</div>
+  <div class="setting-item">
+    <div class="setting-label">Export Data Lokal ke CSV</div>
+    <div class="setting-hint">Download semua data tersimpan sebagai file CSV. Bisa dibuka di Excel.</div>
+    <button class="btn-secondary" onclick="exportCSV()">📥 Download CSV</button>
+  </div>
+  <div class="setting-item">
+    <div class="setting-label" style="color:var(--danger)">Bersihkan Data Lokal</div>
+    <div class="setting-hint">Hapus data yang sudah di-sync dari penyimpanan lokal HP. Data di Google Sheets tetap aman.</div>
+    <button class="btn-secondary btn-danger" onclick="clearSynced()">🗑️ Hapus Data Synced</button>
+  </div>
+
+  <div class="section-label">Cara Setup Google Sheets</div>
+  <div class="setting-item">
+    <div class="setting-label">Panduan Langkah per Langkah</div>
+    <div class="step-item" style="margin-top:8px"><div class="step-num">1</div><div>Buka <b style="color:var(--accent)">Google Sheets</b> baru di komputer</div></div>
+    <div class="step-item"><div class="step-num">2</div><div>Klik <b>Extensions → Apps Script</b></div></div>
+    <div class="step-item"><div class="step-num">3</div><div>Hapus semua kode → paste script dari developer</div></div>
+    <div class="step-item"><div class="step-num">4</div><div>Klik <b>Run → setupInitial</b> → izinkan akses</div></div>
+    <div class="step-item"><div class="step-num">5</div><div>Klik <b>Deploy → New Deployment</b><br>Type: Web App | Execute as: Me | Access: Anyone</div></div>
+    <div class="step-item"><div class="step-num">6</div><div>Copy URL → paste di kolom atas → Test Koneksi</div></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-form" onclick="switchPage('form','nav-form')">
+    <div class="nav-icon">✏️</div><div class="nav-label">Input</div>
+  </div>
+  <div class="nav-item" id="nav-list" onclick="switchPage('list','nav-list')">
+    <div class="nav-icon">🗂️</div><div class="nav-label">Daftar</div>
+  </div>
+  <div class="nav-item" id="nav-settings" onclick="switchPage('settings','nav-settings')">
+    <div class="nav-icon">⚙️</div><div class="nav-label">Pengaturan</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modal-title">Detail Toko</div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let stores = [];
+let photoSession = { ktp: null, toko: null };
+let gpsCoords = null;
+let sheetsURL = '';
+let currentFilter = '';
+
+// ── DATA SALESMAN PER CABANG ──
+const SALES_DATA = {
+  'Medan': [
+    'Agung Syadewo','Ahmad Kurniawan','Alexander Ginting','Ayu Stivany',
+    'Deni Sri Muliani','Ernison Ridoi Saragih','Halimah','Miftahul Khair',
+    'Muhammad Denil Ramadhan','Nando Apriansyah','Obah Ramses Hasugian',
+    'Putri Santy Dewi','Romi Ardiles','Sastrawan','Toguan Harahap',
+    'Yusliani Fitri Rambe','Sales Baru Medan 1','Sales Baru Medan 2'
+  ],
+  'Padang': [
+    'Aidil Ahmad','Apria Ramadani','Dwiki Argito','Joni Pensanobel',
+    'Lugi Aprial','Martias','Muhammad Iqbal','Rachmad','Yunda Indria',
+    'Sales Baru Padang 1','Sales Baru Padang 2'
+  ],
+  'Pekanbaru': [
+    'Agung Istanto Pratama','Asadul Usud','Desi Novela','Desmawita',
+    'Eri Saputra','Martua Pangaribuan','Magnifay Reliquenda Sinaga',
+    'Ricardo Prado Sinaga','Riki','Sharon Tamaro Sibuea','Syafaruddin',
+    'Sales Baru Pekanbaru 1','Sales Baru Pekanbaru 2'
+  ],
+  'Palembang': [
+    'Alal Kalbi','Ayu Cempaka Putri','Billiam Sugonzo','Candra Wijaya',
+    'Desi Winarni','Johan Wiguna','Muhammad Fahri','Nizamia',
+    'Odius Farhan','Rino Dwiyana Caesar Putra','Yudiansyah',
+    'Sales Baru Palembang 1','Sales Baru Palembang 2'
+  ],
+  'Bengkulu': [
+    'Muhamad Putra Ramadan',
+    'Sales Baru Bengkulu 1','Sales Baru Bengkulu 2'
+  ]
+};
+
+// ── INIT ──
+function init() {
+  try { stores = JSON.parse(localStorage.getItem('stores_meta') || '[]'); } catch(e) { stores = []; }
+  sheetsURL = localStorage.getItem('sheetsURL') || '';
+  document.getElementById('sheets-url').value = sheetsURL;
+  renderList();
+  updateSyncBadge();
+  const lastCabang = localStorage.getItem('lastCabang');
+  if (lastCabang) {
+    document.getElementById('f-cabang').value = lastCabang;
+    loadSalesByCabang(lastCabang);
+    const lastSales = localStorage.getItem('lastSales');
+    if (lastSales) { document.getElementById('f-sales').value = lastSales; document.getElementById('sales-name-display').textContent = lastSales; }
+  }
+}
+
+// ── NAV ──
+function switchPage(name, navId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById(navId).classList.add('active');
+  if (name === 'list') renderList(currentFilter);
+}
+
+// ── SALES & CABANG ──
+function loadSalesByCabang(cabang) {
+  const sel = document.getElementById('f-sales');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Pilih Sales —</option>';
+  const list = SALES_DATA[cabang] || [];
+  list.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = s;
+    // visually mark slot sales baru
+    if (s.startsWith('Sales Baru')) o.style.color = '#f59e0b';
+    sel.appendChild(o);
+  });
+  // restore previous selection if still valid for this cabang
+  if (cur && list.includes(cur)) sel.value = cur;
+  else { sel.value = ''; document.getElementById('sales-name-display').textContent = '— Pilih Sales —'; }
+}
+function saveSalesPref() {
+  const v = document.getElementById('f-sales').value;
+  localStorage.setItem('lastSales', v);
+  document.getElementById('sales-name-display').textContent = v || '— Pilih sales di Pengaturan';
+}
+document.getElementById('f-cabang').addEventListener('change', function() {
+  const cabang = this.value;
+  localStorage.setItem('lastCabang', cabang);
+  loadSalesByCabang(cabang);
+  // reset sales selection
+  document.getElementById('f-sales').value = '';
+  document.getElementById('sales-name-display').textContent = '— Pilih Sales —';
+  localStorage.removeItem('lastSales');
+});
+
+// ── GPS + REVERSE GEOCODING ──
+function getGPS() {
+  const btn = document.getElementById('btn-gps');
+  const display = document.getElementById('gps-display');
+  const status = document.getElementById('geocode-status');
+  btn.textContent = '⏳'; btn.disabled = true;
+  status.textContent = '';
+  status.style.color = 'var(--text3)';
+
+  if (!navigator.geolocation) {
+    showToast('GPS tidak didukung', 'error');
+    btn.textContent = '📡 Ambil GPS'; btn.disabled = false; return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      gpsCoords = {
+        lat: pos.coords.latitude.toFixed(6),
+        lng: pos.coords.longitude.toFixed(6),
+        acc: Math.round(pos.coords.accuracy)
+      };
+      display.textContent = gpsCoords.lat + ', ' + gpsCoords.lng + ' (±' + gpsCoords.acc + 'm)';
+      display.classList.add('got');
+      btn.textContent = '🔄 Update'; btn.disabled = false;
+      showToast('GPS berhasil ✅', 'success');
+
+      // Reverse geocoding via BigDataCloud
+      status.textContent = '🔍 Mengambil data lokasi...';
+      try {
+        const url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' +
+          gpsCoords.lat + '&longitude=' + gpsCoords.lng + '&localityLanguage=id';
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // Extract administrative levels
+        // BigDataCloud returns localityInfo.administrative array sorted by order (1=country, higher=more local)
+        let provinsi = '', kota = '', kecamatan = '', kelurahan = '';
+
+        if (data.localityInfo && data.localityInfo.administrative) {
+          const admins = data.localityInfo.administrative;
+          // Indonesia hierarchy: order 4=provinsi, 5=kab/kota, 6=kecamatan, 7=kelurahan/desa
+          admins.forEach(a => {
+            if (a.adminLevel === 4) provinsi = a.name;
+            else if (a.adminLevel === 5) kota = a.name;
+            else if (a.adminLevel === 6) kecamatan = a.name;
+            else if (a.adminLevel === 7) kelurahan = a.name;
+          });
+        }
+
+        // Fallback to principalSubdivision if adminLevel not available
+        if (!provinsi && data.principalSubdivision) provinsi = data.principalSubdivision;
+        if (!kota && data.city) kota = data.city;
+        if (!kecamatan && data.locality) kecamatan = data.locality;
+
+        // Fill fields only if currently empty (don't overwrite manual input)
+        if (provinsi) document.getElementById('f-provinsi').value = provinsi;
+        if (kota) document.getElementById('f-kota').value = kota;
+        if (kecamatan) document.getElementById('f-kecamatan').value = kecamatan;
+        if (kelurahan) document.getElementById('f-kelurahan').value = kelurahan;
+
+        const filled = [provinsi, kota, kecamatan, kelurahan].filter(Boolean).length;
+        if (filled > 0) {
+          status.textContent = '✅ Lokasi terisi otomatis (' + filled + '/4 field). Periksa & koreksi jika perlu.';
+          status.style.color = 'var(--success)';
+        } else {
+          status.textContent = '⚠️ Lokasi tidak terdeteksi. Isi manual.';
+          status.style.color = 'var(--warning)';
+        }
+
+      } catch(err) {
+        status.textContent = '⚠️ Gagal ambil data lokasi. Isi manual.';
+        status.style.color = 'var(--warning)';
+      }
+    },
+    err => {
+      showToast('GPS gagal. Coba lagi.', 'error');
+      btn.textContent = '📡 Ambil GPS'; btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+  );
+}
+
+// ── PHOTO ──
+function triggerPhoto(type) { document.getElementById('input-' + type).click(); }
+function previewPhoto(e, type) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 1024; let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h*MAX/w); w = MAX; } else if (h > MAX) { w = Math.round(w*MAX/h); h = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.8);
+      photoSession[type] = compressed;
+      const box = document.getElementById('box-' + type);
+      box.classList.add('has-photo');
+      box.innerHTML = '<img src="' + compressed + '"><div class="photo-box-label">✅ ' + (type==='ktp'?'KTP':'Toko') + '</div>';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── DUPLICATE CHECK ──
+function checkDuplicateID() {
+  const id = document.getElementById('f-id-customer').value.trim();
+  const err = document.getElementById('err-id-customer');
+  const input = document.getElementById('f-id-customer');
+  if (id.length < 1) { err.classList.remove('show'); input.classList.remove('error'); return; }
+  const dup = stores.some(s => s.idCustomer === id);
+  err.classList.toggle('show', dup);
+  input.classList.toggle('error', dup);
+}
+function checkDuplicateName() {
+  const nama = document.getElementById('f-nama-toko').value.toLowerCase().trim();
+  if (nama.length < 3) { document.getElementById('dup-warning').classList.remove('show'); return; }
+  const dup = stores.some(s => { const n = s.namaToko.toLowerCase(); return n.includes(nama) || nama.includes(n); });
+  document.getElementById('dup-warning').classList.toggle('show', dup);
+}
+
+// ── VALIDATE ──
+function validate() {
+  const rules = [
+    { id: 'f-cabang',      msg: 'Pilih cabang' },
+    { id: 'f-sales',       msg: 'Pilih nama sales' },
+    { id: 'f-id-customer', msg: 'ID Customer wajib diisi' },
+    { id: 'f-nama-toko',   msg: 'Nama toko wajib diisi' },
+    { id: 'f-nama-pemilik',msg: 'Nama pemilik wajib diisi' },
+    { id: 'f-kecamatan',   msg: 'Kecamatan wajib diisi' },
+    { id: 'f-kelurahan',   msg: 'Kelurahan wajib diisi' },
+  ];
+  for (const r of rules) {
+    if (!document.getElementById(r.id).value.trim()) { showToast(r.msg, 'error'); document.getElementById(r.id).focus(); return false; }
+  }
+  const idVal = document.getElementById('f-id-customer').value.trim();
+  if (!/^[0-9]{10,11}$/.test(idVal)) { showToast('ID Customer harus 10–11 digit angka', 'error'); return false; }
+  if (stores.some(s => s.idCustomer === idVal)) { showToast('ID Customer sudah terdaftar', 'error'); return false; }
+  if (!gpsCoords) { showToast('Ambil GPS terlebih dahulu', 'error'); return false; }
+  return true;
+}
+
+// ── SUBMIT ──
+function submitForm() {
+  if (!validate()) return;
+  const id = Date.now().toString();
+  const store = {
+    id, timestamp: new Date().toISOString(),
+    idCustomer: document.getElementById('f-id-customer').value.trim(),
+    sales: document.getElementById('f-sales').value,
+    cabang: document.getElementById('f-cabang').value,
+    namaToko: document.getElementById('f-nama-toko').value.trim(),
+    tipeToko: document.getElementById('f-tipe').value,
+    namaPemilik: document.getElementById('f-nama-pemilik').value.trim(),
+    noHP: document.getElementById('f-hp').value,
+    nik: document.getElementById('f-nik').value,
+    provinsi: document.getElementById('f-provinsi').value,
+    kota: document.getElementById('f-kota').value,
+    kecamatan: document.getElementById('f-kecamatan').value.trim(),
+    kelurahan: document.getElementById('f-kelurahan').value.trim(),
+    alamat: document.getElementById('f-alamat').value,
+    lat: gpsCoords.lat, lng: gpsCoords.lng, gpsAkurasi: gpsCoords.acc,
+    catatan: document.getElementById('f-catatan').value,
+    synced: false,
+    hasPhotoKTP: !!photoSession.ktp,
+    hasPhotoToko: !!photoSession.toko
+  };
+  if (photoSession.ktp) try { sessionStorage.setItem('photo_ktp_' + id, photoSession.ktp); } catch(e) {}
+  if (photoSession.toko) try { sessionStorage.setItem('photo_toko_' + id, photoSession.toko); } catch(e) {}
+  stores.push(store);
+  saveMeta();
+  resetForm();
+  updateSyncBadge();
+  showToast('✅ ' + store.namaToko + ' tersimpan!', 'success');
+  if (sheetsURL) setTimeout(() => syncAll(), 800);
+}
+
+function resetForm() {
+  ['f-id-customer','f-nama-toko','f-nama-pemilik','f-hp','f-nik','f-provinsi','f-kota','f-kecamatan','f-kelurahan','f-alamat','f-catatan']
+    .forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('error'); });
+  document.getElementById('f-tipe').value = '';
+  document.getElementById('err-id-customer').classList.remove('show');
+  document.getElementById('dup-warning').classList.remove('show');
+  document.getElementById('gps-display').textContent = 'Belum diambil';
+  document.getElementById('gps-display').classList.remove('got');
+  document.getElementById('btn-gps').textContent = '📡 Ambil GPS';
+  document.getElementById('btn-gps').disabled = false;
+  document.getElementById('geocode-status').textContent = '';
+  photoSession = { ktp: null, toko: null }; gpsCoords = null;
+  ['ktp','toko'].forEach(t => {
+    const box = document.getElementById('box-' + t);
+    box.classList.remove('has-photo');
+    box.innerHTML = '<div class="photo-icon">' + (t==='ktp'?'🪪':'🏪') + '</div><div class="photo-box-label">Foto ' + (t==='ktp'?'KTP':'Toko') + '<br><span style="font-size:10px;opacity:.7">Tap untuk ambil</span></div>';
+    document.getElementById('input-' + t).value = '';
+  });
+}
+
+// ── SYNC ──
+async function syncAll() {
+  sheetsURL = document.getElementById('sheets-url').value.trim() || sheetsURL;
+  if (!sheetsURL) { showToast('Setup URL Google Sheets dulu', 'warning'); return; }
+  const pending = stores.filter(s => !s.synced);
+  if (!pending.length) { showToast('Semua data sudah ter-sync ✅', 'success'); return; }
+  setSyncState('syncing', 'Sync...');
+  let ok = 0;
+  for (const store of pending) {
+    try {
+      const payload = { ...store, fotoKTP: sessionStorage.getItem('photo_ktp_' + store.id) || '', fotoToko: sessionStorage.getItem('photo_toko_' + store.id) || '' };
+      await fetch(sheetsURL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      store.synced = true; ok++;
+    } catch(e) { console.error(e); }
+  }
+  saveMeta(); renderList(currentFilter); updateSyncBadge();
+  if (ok === pending.length) showToast('✅ ' + ok + ' toko ter-sync', 'success');
+  else showToast('⚠️ ' + ok + '/' + pending.length + ' berhasil', 'warning');
+}
+
+async function saveAndTestURL() {
+  const url = document.getElementById('sheets-url').value.trim();
+  if (!url) { showToast('Isi URL dulu', 'error'); return; }
+  sheetsURL = url; localStorage.setItem('sheetsURL', url);
+  const status = document.getElementById('url-status');
+  status.textContent = '⏳ Menguji koneksi...'; status.style.color = 'var(--text2)';
+  try {
+    const res = await fetch(url, { mode: 'cors' });
+    const data = await res.json();
+    status.textContent = data.status === 'active' ? '✅ Terhubung! Total data: ' + data.totalData + ' toko' : '⚠️ Terhubung tapi respons tidak dikenali';
+    status.style.color = data.status === 'active' ? 'var(--success)' : 'var(--warning)';
+  } catch(e) { status.textContent = '✅ URL disimpan. Kirim data untuk verifikasi.'; status.style.color = 'var(--text2)'; }
+}
+
+function setSyncState(state, label) {
+  document.getElementById('sync-dot').className = 'sync-dot' + (state==='synced'?' synced':state==='syncing'?' syncing':'');
+  document.getElementById('sync-label').textContent = label;
+}
+function updateSyncBadge() {
+  const p = stores.filter(s=>!s.synced).length;
+  setSyncState(p===0?'synced':'pending', p===0?'Synced':p+' Pending');
+}
+
+// ── LIST ──
+function renderList(filter) {
+  if (filter !== undefined) currentFilter = filter;
+  let filtered = [...stores].reverse();
+  if (currentFilter) {
+    const q = currentFilter.toLowerCase();
+    filtered = filtered.filter(s =>
+      s.namaToko.toLowerCase().includes(q) ||
+      (s.idCustomer||'').includes(q) ||
+      (s.kecamatan||'').toLowerCase().includes(q) ||
+      (s.sales||'').toLowerCase().includes(q) ||
+      (s.cabang||'').toLowerCase().includes(q)
+    );
+  }
+  document.getElementById('stat-total').textContent = stores.length;
+  document.getElementById('stat-pending').textContent = stores.filter(s=>!s.synced).length;
+  document.getElementById('stat-synced').textContent = stores.filter(s=>s.synced).length;
+  const container = document.getElementById('store-list');
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">🏪</div><div class="empty-title">' + (currentFilter?'Tidak ditemukan':'Belum ada data') + '</div><div class="empty-sub">' + (currentFilter?'Coba kata kunci lain':'Mulai input dari tab Input') + '</div></div>';
+    return;
+  }
+  container.innerHTML = filtered.map(s => {
+    const thumb = sessionStorage.getItem('photo_toko_' + s.id);
+    return '<div class="store-item" onclick="showDetail(\'' + s.id + '\')">'
+      + '<div class="store-thumb">' + (thumb?'<img src="'+thumb+'">':'🏪') + '</div>'
+      + '<div class="store-info">'
+      + '<div class="store-name">' + esc(s.namaToko) + '</div>'
+      + '<div class="store-meta">ID: <b>' + esc(s.idCustomer) + '</b> · ' + esc(s.cabang||'-') + '</div>'
+      + '<div class="store-meta">' + esc(s.namaPemilik) + ' · ' + esc(s.kecamatan||'-') + '</div>'
+      + '<span class="store-badge '+(s.synced?'badge-synced':'badge-pending')+'">'+(s.synced?'✅ Synced':'⏳ Pending')+'</span>'
+      + '</div></div>';
+  }).join('');
+}
+function filterList(v) { renderList(v); }
+
+function showDetail(id) {
+  const s = stores.find(x => x.id === id); if (!s) return;
+  const ktp = sessionStorage.getItem('photo_ktp_' + id);
+  const toko = sessionStorage.getItem('photo_toko_' + id);
+  document.getElementById('modal-title').textContent = s.namaToko;
+  document.getElementById('modal-body').innerHTML =
+    (ktp||toko ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
+      + (ktp?'<div><div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600">KTP</div><img src="'+ktp+'" style="width:100%;border-radius:8px"></div>':'')
+      + (toko?'<div><div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600">Toko</div><img src="'+toko+'" style="width:100%;border-radius:8px"></div>':'')
+      + '</div>' : '') +
+    row('ID Customer', '<b style="font-size:16px;color:var(--accent)">'+esc(s.idCustomer)+'</b>') +
+    row('Sales', s.sales) + row('Cabang', s.cabang) +
+    row('Tipe Toko', s.tipeToko) + row('Pemilik', s.namaPemilik) +
+    row('HP', s.noHP) + row('NIK', s.nik) +
+    row('Wilayah', [s.kelurahan,s.kecamatan,s.kota,s.provinsi].filter(Boolean).join(', ')) +
+    row('Alamat', s.alamat) +
+    row('GPS', s.lat+', '+s.lng+' (±'+s.gpsAkurasi+'m)') +
+    row('Maps', '<a href="https://maps.google.com/?q='+s.lat+','+s.lng+'" target="_blank" style="color:var(--accent)">🗺️ Buka Google Maps</a>') +
+    (s.catatan ? row('Catatan', s.catatan) : '') +
+    row('Waktu Input', new Date(s.timestamp).toLocaleString('id-ID')) +
+    row('Status', s.synced?'<span style="color:var(--success)">✅ Sudah sync</span>':'<span style="color:var(--warning)">⏳ Belum sync</span>');
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function row(label, val) {
+  return '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">'+label+'</div><div style="font-size:14px;color:var(--text)">'+(val||'<span style="color:var(--text3)">—</span>')+'</div></div>';
+}
+function closeModalOutside(e) { if (e.target.id==='modal-overlay') closeModal(); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+
+// ── EXPORT CSV ──
+function exportCSV() {
+  if (!stores.length) { showToast('Tidak ada data', 'warning'); return; }
+  const h = ['ID Sistem','Timestamp','ID Customer','Sales','Cabang','Nama Toko','Tipe','Nama Pemilik','HP','NIK','Provinsi','Kota','Kecamatan','Kelurahan','Alamat','Lat','Lng','GPS Akurasi','Ada Foto KTP','Ada Foto Toko','Catatan','Synced'];
+  const rows = stores.map(s => [s.id,s.timestamp,s.idCustomer,s.sales,s.cabang,s.namaToko,s.tipeToko,s.namaPemilik,s.noHP,s.nik,s.provinsi,s.kota,s.kecamatan,s.kelurahan,s.alamat,s.lat,s.lng,s.gpsAkurasi+'m',s.hasPhotoKTP?'Ya':'Tidak',s.hasPhotoToko?'Ya':'Tidak',s.catatan,s.synced?'Ya':'Tidak']);
+  const csv = [h,...rows].map(r=>r.map(v=>'"'+(v||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'survey_toko_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('CSV didownload ✅', 'success');
+}
+
+function clearSynced() {
+  const count = stores.filter(s=>s.synced).length;
+  if (!count) { showToast('Tidak ada data synced', 'warning'); return; }
+  if (!confirm('Hapus ' + count + ' data synced dari lokal?\n\nData di Google Sheets tetap aman.')) return;
+  stores.filter(s=>s.synced).forEach(s => { sessionStorage.removeItem('photo_ktp_'+s.id); sessionStorage.removeItem('photo_toko_'+s.id); });
+  stores = stores.filter(s=>!s.synced);
+  saveMeta(); renderList(); updateSyncBadge();
+  showToast(count + ' data lokal dihapus', 'success');
+}
+
+function saveMeta() {
+  try { localStorage.setItem('stores_meta', JSON.stringify(stores)); } catch(e) {
+    const trimmed = stores.filter(s=>!s.synced).concat(stores.filter(s=>s.synced).slice(-50));
+    localStorage.setItem('stores_meta', JSON.stringify(trimmed));
+  }
+}
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast '+(type||'success')+' show';
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+document.getElementById('sheets-url').addEventListener('blur', function() {
+  if (this.value) { sheetsURL = this.value.trim(); localStorage.setItem('sheetsURL', sheetsURL); }
+});
+
+init();
+</script>
+</body>
+</html>
